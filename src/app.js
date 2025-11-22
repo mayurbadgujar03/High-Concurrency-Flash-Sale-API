@@ -4,6 +4,8 @@ import cors from "cors";
 
 const app = express();
 
+import shop from "./routes/shop.routes.js";
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
@@ -15,5 +17,7 @@ app.use(
     allowedHeaders: ["Content-Type", "Authorization"],
   }),
 );
+
+app.use("/api/v1/shop", shop);
 
 export default app;
