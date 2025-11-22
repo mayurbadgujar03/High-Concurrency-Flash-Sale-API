@@ -2,8 +2,8 @@ import { ApiError } from "../utils/api-error.js";
 import { ApiResponse } from "../utils/api-response.js";
 import { AsyncHandler } from "../utils/async-handler.js";
 
-import Product from "../models/product.models.js";
-import Order from "../models/order.models.js";
+import { Product } from "../models/product.models.js";
+import { Order } from "../models/order.models.js";
 
 const getProducts = AsyncHandler(async (req, res) => {
   const products = await Product.find();
