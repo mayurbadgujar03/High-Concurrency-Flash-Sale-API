@@ -18,8 +18,14 @@ const buyProduct = AsyncHandler(async (req, res) => {
 
   const product = await Product.findById(productId);
 
+  const existingOrder = await Order.findOne({ userId: userId, productId: productId });
+
+  if (existingOrder) {
+    return res.status(400).json(new ApiError(400, "You have already purchased an iPhone."));
+  }
+
   if (!product) {
-    return res.status(400).json(new ApiError(400, "Product not found"));
+    return res.status(400).json(new ApiError(400, "Product not found."));
   }
 
   if (product.stock <= 0) {
