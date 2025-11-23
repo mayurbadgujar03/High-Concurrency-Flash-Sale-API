@@ -1,33 +1,39 @@
 async function attack() {
-  const url = "http://localhost:8000/api/v1/shop/buy";
+    const url = 'http://localhost:8000/api/v1/shop/buy';
+    const headers = { 'x-user-id': 'attacker_1', 'Content-Type': 'application/json' };
+    const body = { productId: '64c9e654e599a81832123456' };
 
-  const headers = {
-    "x-user-id": "attacker_1",
-    "Content-Type": "application/json",
-  };
-  const body = { productId: "64c9e654e599a81832123456" };
+    console.log(" Launching concurrency attack...\n");
 
-  console.log("Launching concurrency attack...");
+    const requests = [];
 
-  const requests = [];
-  for (let i = 0; i < 5; i++) {
-    requests.push(
-      fetch(url, {
-        method: "POST",
-        headers,
-        body: JSON.stringify(body),
-      }),
-    );
-  }
+    for (let i = 0; i < 5; i++) {
+        const reqId = i + 1;
+        const startTime = Date.now();
 
-  try {
-    await Promise.all(requests);
-    console.log("All requests sent.");
-  } catch (error) {
-    console.log(
-      "Attack finished (some requests likely failed, which is good).",
-    );
-  }
+        console.log(` [${reqId}] Sent at: ${new Date(startTime).toLocaleString()}`);
+
+        const request = fetch(url, {
+            method: "POST",
+            headers,
+            body: JSON.stringify(body),
+        })
+        .then(async res => {
+            const endTime = Date.now();
+            console.log(` [${reqId}] Completed at: ${new Date(endTime).toLocaleString()} (Δ ${endTime - startTime} ms)`);
+            return res;
+        })
+        .catch(err => {
+            const endTime = Date.now();
+            console.log(` [${reqId}] Failed at: ${new Date(endTime).toLocaleString()} (Δ ${endTime - startTime} ms)`);
+        });
+
+        requests.push(request);
+    }
+
+    await Promise.allSettled(requests);
+
+    console.log("\n Attack finished.");
 }
 
 attack();
