@@ -1,13 +1,34 @@
+import mongoose from "mongoose";
+
 import { ApiError } from "../utils/api-error.js";
 import { ApiResponse } from "../utils/api-response.js";
 import { AsyncHandler } from "../utils/async-handler.js";
+import redis from "../db/redis.js";
 
 import { Product } from "../models/product.models.js";
 import { Order } from "../models/order.models.js";
-import mongoose from "mongoose";
+
 
 const getProducts = AsyncHandler(async (req, res) => {
+  const cacheKey = "products:all";
+
+  const cacheData = await redis.get(cacheKey);
+
+  if (cacheData) {
+
+    const products = JSON.parse(cacheData);
+
+    return res
+      .status(200)
+      .json(new ApiResponse(200, products, "Found all iphones"));
+  }
+
   const products = await Product.find();
+
+  if (products.length > 0) {
+    await redis.set(cacheKey, JSON.stringify(products), 'EX', 60);
+  }
+
   return res
     .status(200)
     .json(new ApiResponse(200, products, "Found all iphones"));
@@ -20,13 +41,17 @@ const buyProduct = AsyncHandler(async (req, res) => {
   const session = await mongoose.startSession();
   session.startTransaction();
 
-  const existingOrder = await Order.findOne({ userId, productId }).session(session);
+  const existingOrder = await Order.findOne({ userId, productId }).session(
+    session,
+  );
   if (existingOrder) {
     await session.abortTransaction();
     session.endSession();
-    return res.status(400).json(new ApiError(400, "You have already purchased an iPhone."));
+    return res
+      .status(400)
+      .json(new ApiError(400, "You have already purchased an iPhone."));
   }
-  
+
   const product = await Product.findById(productId).session(session);
   if (!product) {
     await session.abortTransaction();
