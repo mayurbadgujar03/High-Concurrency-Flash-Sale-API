@@ -1,13 +1,12 @@
 import mongoose from "mongoose";
+import redis from "../db/redis.js";
 
 import { ApiError } from "../utils/api-error.js";
 import { ApiResponse } from "../utils/api-response.js";
 import { AsyncHandler } from "../utils/async-handler.js";
-import redis from "../db/redis.js";
 
 import { Product } from "../models/product.models.js";
 import { Order } from "../models/order.models.js";
-
 
 const getProducts = AsyncHandler(async (req, res) => {
   const cacheKey = "products:all";
@@ -15,7 +14,6 @@ const getProducts = AsyncHandler(async (req, res) => {
   const cacheData = await redis.get(cacheKey);
 
   if (cacheData) {
-
     const products = JSON.parse(cacheData);
 
     return res
@@ -26,7 +24,7 @@ const getProducts = AsyncHandler(async (req, res) => {
   const products = await Product.find();
 
   if (products.length > 0) {
-    await redis.set(cacheKey, JSON.stringify(products), 'EX', 60);
+    await redis.set(cacheKey, JSON.stringify(products), "EX", 60);
   }
 
   return res
@@ -37,6 +35,19 @@ const getProducts = AsyncHandler(async (req, res) => {
 const buyProduct = AsyncHandler(async (req, res) => {
   const userId = req.user.id;
   const { productId } = req.body;
+  const purchasedUsersKey = `purchasedUsers:${productId}`;
+
+  const isMember = await redis.sismember(purchasedUsersKey, userId);
+  if (isMember === 1) {
+    return res
+      .status(400)
+      .json(
+        new ApiError(
+          400,
+          "You have already purchased this item.",
+        ),
+      );
+  }
 
   const session = await mongoose.startSession();
   session.startTransaction();
@@ -47,9 +58,10 @@ const buyProduct = AsyncHandler(async (req, res) => {
   if (existingOrder) {
     await session.abortTransaction();
     session.endSession();
+    await redis.sadd(purchasedUsersKey, userId);
     return res
       .status(400)
-      .json(new ApiError(400, "You have already purchased an iPhone."));
+      .json(new ApiError(400, "You have already purchased this item."));
   }
 
   const product = await Product.findById(productId).session(session);
@@ -76,6 +88,9 @@ const buyProduct = AsyncHandler(async (req, res) => {
 
   await session.commitTransaction();
   session.endSession();
+
+  await redis.sadd(purchasedUsersKey, userId);
+  await redis.del("products:all");
 
   res
     .status(200)
