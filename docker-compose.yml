@@ -1,0 +1,40 @@
+version: "3.8"
+
+services:
+  redis:
+    image: redis/redis-stack:latest
+    container_name: flashsale-redis
+    restart: always
+    ports:
+      - "6379:6379" 
+      - "8001:8001" 
+    volumes:
+      - redis_data:/data 
+
+  backend:
+    build: .  
+    container_name: flashsale-api
+    restart: always
+    ports:
+      - "8000:8000" 
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - PORT=8000
+    depends_on:
+      - redis
+
+  nginx:
+    image: nginx:alpine
+    container_name: flashsale-gateway
+    restart: always
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - backend
+
+volumes:
+  redis_data:
