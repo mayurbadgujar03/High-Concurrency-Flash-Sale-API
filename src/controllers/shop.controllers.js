@@ -41,66 +41,79 @@ const buyProduct = AsyncHandler(async (req, res) => {
   if (isMember === 1) {
     return res
       .status(400)
-      .json(
-        new ApiError(
-          400,
-          "You have already purchased this item.",
-        ),
-      );
+      .json(new ApiError(400, "You have already purchased this item."));
   }
 
   const session = await mongoose.startSession();
   session.startTransaction();
 
-  const existingOrder = await Order.findOne({ userId, productId }).session(
-    session,
-  );
-  if (existingOrder) {
-    await session.abortTransaction();
-    session.endSession();
-    await redis.sadd(purchasedUsersKey, userId);
-    return res
-      .status(400)
-      .json(new ApiError(400, "You have already purchased this item."));
-  }
-
-  const product = await Product.findById(productId).session(session);
-  if (!product) {
-    await session.abortTransaction();
-    session.endSession();
-    return res.status(400).json(new ApiError(400, "Product not found."));
-  }
-
-  if (product.stock <= 0) {
-    await session.abortTransaction();
-    session.endSession();
-    return res.status(400).json(new ApiError(400, "Out of stock!"));
-  }
-
-  product.stock = product.stock - 1;
-  await product.save({ session });
-
-  const order = new Order({
-    userId: userId,
-    productId: productId,
-  });
-  await order.save({ session });
-
-  await session.commitTransaction();
-  session.endSession();
-
-  await redis.sadd(purchasedUsersKey, userId);
-  await redis.del("products:all");
-
-  res
-    .status(200)
-    .json(
-      new ApiResponse(
-        200,
-        { order, remainingStock: product.stock },
-        "iPhone purchased successfully!",
-      ),
+  try {
+    const existingOrder = await Order.findOne({ userId, productId }).session(
+      session,
     );
+    if (existingOrder) {
+      await session.abortTransaction();
+      session.endSession();
+      await redis.sadd(purchasedUsersKey, userId);
+      return res
+        .status(400)
+        .json(new ApiError(400, "You have already purchased this item."));
+    }
+
+    const product = await Product.findById(productId).session(session);
+    if (!product) {
+      await session.abortTransaction();
+      session.endSession();
+      return res.status(400).json(new ApiError(400, "Product not found."));
+    }
+
+    if (product.stock <= 0) {
+      await session.abortTransaction();
+      session.endSession();
+      return res.status(400).json(new ApiError(400, "Out of stock!"));
+    }
+
+    product.stock = product.stock - 1;
+    await product.save({ session });
+
+    const order = new Order({
+      userId: userId,
+      productId: productId,
+    });
+    await order.save({ session });
+
+    await session.commitTransaction();
+
+    await Promise.all([
+      await redis.sadd(purchasedUsersKey, userId),
+      await redis.del("products:all"),
+    ]);
+
+    res
+      .status(200)
+      .json(
+        new ApiResponse(
+          200,
+          { order, remainingStock: product.stock },
+          "iPhone purchased successfully!",
+        ),
+      );
+  } catch (error) {
+    await session.abortTransaction();
+
+    if (
+      error.errorLabels &&
+      error.errorLabels.includes("TransientTransactionError")
+    ) {
+      return res
+        .status(409)
+        .json(new ApiError(409, "High Traffic: Please try again!"));
+    }
+
+    throw error;
+  } finally {
+    session.endSession();
+  }
 });
 
 export { getProducts, buyProduct };
