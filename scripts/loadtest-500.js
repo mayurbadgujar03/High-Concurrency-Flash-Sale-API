@@ -14,7 +14,7 @@ export const options = {
 };
 
 export default function () {
-  const url = 'http://localhost/api/v1/shop/buy';
+  const url = 'http://localhost:8080/api/v1/shop/buy';
   
   const uniqueUser = `user_${__VU}_${__ITER}`;
 

@@ -15,7 +15,7 @@ export const options = {
 };
 
 export default function () {
-  const url = 'http://localhost/api/v1/shop/buy';
+  const url = 'http://localhost:8080/api/v1/shop/buy';
   
   const uniqueUser = `user_${__VU}_${__ITER}_${Math.random()}`;
 
@@ -37,6 +37,10 @@ export default function () {
     'is status 400 (Sold Out)': (r) => r.status === 400,
     'is status 409 (Conflict - TRY AGAIN)': (r) => r.status === 409,
     'is status 500 (CRASH)': (r) => r.status === 500,
+    'is status 502 (Bad Gateway - Nginx)': (r) => r.status === 502,
+    'is status 504 (Gateway Timeout)': (r) => r.status === 504,
+    'is status 404 (Not Found)': (r) => r.status === 404,
+    'is status 401 (Unauthorized)': (r) => r.status === 401,
   });
 
   sleep(Math.random() * 1); 
