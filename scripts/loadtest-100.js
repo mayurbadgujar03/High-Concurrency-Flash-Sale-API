@@ -3,9 +3,8 @@ import { check, sleep } from "k6";
 
 export const options = {
   stages: [
-    { duration: "10s", target: 1000 },
-    { duration: "20s", target: 10000 },
-    { duration: "30s", target: 10000 },
+    { duration: "10s", target: 10 },
+    { duration: "1m", target: 100 },
     { duration: "10s", target: 0 },
   ],
   thresholds: {
@@ -17,7 +16,7 @@ export const options = {
 export default function () {
   const url = "http://localhost:8080/api/v1/shop/buy";
 
-  const uniqueUser = `user_${__VU}_${__ITER}_${Math.random()}`;
+  const uniqueUser = `user_${__VU}_${__ITER}`;
 
   const payload = JSON.stringify({
     productId: "64c9e654e599a81832123456",
@@ -44,5 +43,5 @@ export default function () {
     "is connection error (0)": (r) => r.status === 0,
   });
 
-  sleep(Math.random() * 1);
+  sleep(0.1);
 }
