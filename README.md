@@ -108,6 +108,6 @@ We pushed the system to its limits using **k6** on a local environment.
     
 2.  ``` docker-compose up -d --build ```
     
-3.  ``` k6 run scripts/stability\_test.js ```
+3.  ``` k6 run scripts/stability-test.js ```
     
 4.  Open Grafana at ```http://localhost:3000``` to see the traffic live.
