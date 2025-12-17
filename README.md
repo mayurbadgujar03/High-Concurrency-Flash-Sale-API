@@ -64,6 +64,9 @@ API -->|Metrics| Prom[Prometheus]
 Prom -->|Visualize| Grafana[Grafana Dashboard]   
 ```
 
+<img width="6211" height="780" alt="API Cluster Monitoring-2025-12-17-080046" src="https://github.com/user-attachments/assets/ae9b75b0-a64f-44b4-baee-b98f33bdcf34" />
+
+
 *   **Gateway (Nginx):** Acts as a reverse proxy, shielding the backend from direct exposure and handling connection pooling.
     
 *   **Compute (Node.js/Express):** Handles business logic and transaction management.
