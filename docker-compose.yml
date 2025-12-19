@@ -1,60 +1,89 @@
 version: "3.8"
 
 services:
+
+  mongodb:
+    image: mongo:latest
+    container_name: dfs-mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - flash-sale-net
+
   redis:
-    image: redis/redis-stack:latest
-    container_name: flashsale-redis
-    restart: always
+    image: redis:alpine
+    container_name: dfs-redis
     ports:
       - "6379:6379"
-      - "8001:8001"
     volumes:
       - redis_data:/data
-
-  backend:
-    build: .
-    container_name: flashsale-api
-    restart: always
+    networks:
+      - flash-sale-net
+    
+  api-gateway:
+    build: ./api-gateway
+    container_name: dfs-gateway
     ports:
-      - "8000:8000"
+     - "3000:3000"
     environment:
-      - DATABASE_URL=${DATABASE_URL}
+     - PORT=3000
+     - AUTH_SERVICE_URL=http://auth-service:3001
+     - STOCK_SERVICE_URL=http://stock-service:3002
+     - ORDER_SERVICE_URL=http://order-service:3003
+    depends_on:
+      - auth-service
+      - stock-service
+      - order-service
+    networks:
+      - flash-sale-net
+  
+  auth-service:
+    build: ./auth-service
+    container_name: dfs-auth
+    ports:
+      - "3001:3001"
+    environment:
+      - PORT=3001
+      - MONGO_URI=mongodb://mongodb:27017/auth_db
+      - JWT_SECRET=${JWT_SECRET}
+    depends_on:
+      - mongodb
+    networks:
+      - flash-sale-net
+
+  stock-service:
+    build: ./stock-service
+    container_name: dfs-stock
+    ports:
+      - "3002:3002"
+    environment:
+      - PORT=3002
       - REDIS_HOST=redis
       - REDIS_PORT=6379
-      - PORT=8000
     depends_on:
       - redis
+    networks:
+      - flash-sale-net
 
-  nginx:
-    image: nginx:alpine
-    container_name: flashsale-gateway
-    restart: always
+  order-service:
+    build: ./order-service
+    container_name: dfs-order
     ports:
-      - "8080:80"
-    volumes:
-      - ./nginx.conf:/etc/nginx/nginx.conf:ro
-    depends_on:
-      - backend
-
-  prometheus:
-    image: prom/prometheus
-    container_name: flashsale-prometheus
-    volumes:
-      - ./prometheus.yml:/etc/prometheus/prometheus.yml
-    ports:
-      - "9090:9090"
-    depends_on:
-      - nginx
-
-  grafana:
-    image: grafana/grafana
-    container_name: flashsale-grafana
-    ports:
-      - "3000:3000"
+      - "3003:3003"
     environment:
-      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - PORT=3003
+      - MONGO_URI=mongodb://mongodb:27017/order_db
     depends_on:
-      - prometheus
+      - mongodb
+    networks:
+      - flash-sale-net
+
+networks:
+  flash-sale-net:
+    driver: bridge
 
 volumes:
+  mongo_data:
   redis_data:
