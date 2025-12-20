@@ -15,7 +15,7 @@ const createOrder = AsyncHandler(async (req, res) => {
   const qty = quantity || 1;
 
   try {
-    const stockResponse = await fetch(`${STOCK_SERVICE_URL}/reserve`, {
+    const stockResponse = await fetch(`${stockServiceUrl}/reserve`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ quantity: qty }),
