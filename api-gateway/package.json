@@ -1,5 +1,5 @@
 {
-  "name": "order-service",
+  "name": "api-gateway",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
@@ -12,10 +12,10 @@
   "license": "ISC",
   "type": "module",
   "dependencies": {
+    "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",
     "express": "^5.2.1",
-    "mongoose": "^9.0.2",
     "node-fetch": "^3.3.2"
   }
 }

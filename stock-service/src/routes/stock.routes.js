@@ -3,7 +3,7 @@ import {
     initializeStock, 
     reserveStock, 
     getCurrentStock 
-} from "../controllers/stock.controller.js";
+} from "../controllers/stock.controllers.js";
 
 const router = Router();
 
