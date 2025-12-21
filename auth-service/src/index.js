@@ -6,7 +6,7 @@ dotenv.config({ path: "./.env" });
 
 connectDB()
   .then(() => {
-    app.listen(config.port, () => {
+    app.listen(process.env.PORT, () => {
       console.log(`Auth Service running on port : ${process.env.PORT}`);
     });
   })

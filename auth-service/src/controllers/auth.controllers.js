@@ -7,12 +7,16 @@ import jwt from "jsonwebtoken";
 const registerUser = AsyncHandler(async (req, res) => {
   const { email, username, password } = req.body;
   if ([email, username, password].some((field) => field?.trim() === "")) {
-    throw new ApiError(400, "All field are required");
+    return res
+      .status(400)
+      .json(new ApiError(400, "All field are required"));
   }
 
   const existedUser = await User.findOne({ email });
   if (existedUser) {
-    throw new ApiError(409, "User with email or username already exists");
+    return res
+      .status(409)
+      .json(new ApiError(409, "User with email or username already exists"));
   }
 
   const user = await User.create({ email, username, password });
@@ -26,24 +30,36 @@ const registerUser = AsyncHandler(async (req, res) => {
 const loginUser = AsyncHandler(async (req, res) => {
   const { email, password } = req.body;
   if (!email || !password) {
-    throw new ApiError(400, "Email and password are required");
+    return res
+      .status(400)
+      .json(new ApiError(400, "Email and password are required"));
   }
 
   const user = await User.findOne({ email });
   if (!user) {
-    throw new ApiError(404, "User does not exist");
+    return res
+      .status(404)
+      .json(new ApiError(404, "User does not exist"));
   }
 
   const isPasswordValid = await user.isPasswordCorrect(password);
   if (!isPasswordValid) {
-    throw new ApiError(401, "Invalid user credentials");
+    return res
+      .status(401)
+      .json(new ApiError(401, "Invalid user credentials"));
   }
 
   const accessToken = user.generateAccessToken();
   const loggedInUser = await User.findById(user._id).select("-password");
 
+  const options = {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+  };
+
   return res
     .status(200)
+    .cookie("accessToken", accessToken, options)
     .json(
       new ApiResponse(
         200,
@@ -56,14 +72,18 @@ const loginUser = AsyncHandler(async (req, res) => {
 const validateToken = AsyncHandler(async (req, res) => {
   const { token } = req.body;
   if (!token) {
-    throw new ApiError(400, "Token is required");
+    return res
+      .status(409)
+      .json(new ApiError(409, "Token is required"));
   }
 
   try {
     const decodedToken = jwt.verify(token, config.accessTokenSecret);
     const user = await User.findById(decodedToken?._id).select("-password");
     if (!user) {
-      throw new ApiError(401, "Invalid Token");
+      return res
+      .status(401)
+      .json(new ApiError(401, "Invalid Token"));
     }
 
     return res
