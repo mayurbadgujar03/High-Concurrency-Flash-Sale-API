@@ -24,6 +24,12 @@ const loginProxy = AsyncHandler(async (req, res) => {
     body: JSON.stringify(req.body),
   });
 
+  const cookie = response.headers.get("set-cookie");
+
+  if (cookie) {
+    res.setHeader("Set-Cookie", cookie);
+  }
+
   const data = await response.json();
   return res.status(response.status).json(data);
 });

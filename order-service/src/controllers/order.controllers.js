@@ -13,12 +13,13 @@ const createOrder = AsyncHandler(async (req, res) => {
   const { productId, quantity } = req.body;
 
   const qty = quantity || 1;
+  const pId = productId || "item:1";
 
   try {
     const stockResponse = await fetch(`${stockServiceUrl}/reserve`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ quantity: qty }),
+      body: JSON.stringify({ productId: pId, quantity: qty }),
     });
 
     if (!stockResponse.ok) {
@@ -37,7 +38,7 @@ const createOrder = AsyncHandler(async (req, res) => {
 
   const order = await Order.create({
     userId,
-    productId: productId,
+    productId: pId,
     quantity: qty,
     status: OrderStatusEnum.CONFIRMED,
   });

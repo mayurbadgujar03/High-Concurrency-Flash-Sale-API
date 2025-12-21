@@ -1,7 +1,6 @@
 version: "3.8"
 
 services:
-
   mongodb:
     image: mongo:latest
     container_name: dfs-mongo
@@ -21,24 +20,26 @@ services:
       - redis_data:/data
     networks:
       - flash-sale-net
-    
+
   api-gateway:
     build: ./api-gateway
     container_name: dfs-gateway
     ports:
-     - "3000:3000"
+      - "3000:3000"
     environment:
-     - PORT=3000
-     - AUTH_SERVICE_URL=http://auth-service:3001/api/v1/auth
-     - STOCK_SERVICE_URL=http://stock-service:3002/api/v1/stock
-     - ORDER_SERVICE_URL=http://order-service:3003/api/v1/orders
+      - PORT=3000
+      - AUTH_SERVICE_URL=http://auth-service:3001/api/v1/auth
+      - STOCK_SERVICE_URL=http://stock-service:3002/api/v1/stock
+      - ORDER_SERVICE_URL=http://order-service:3003/api/v1/orders
+      - ACCESS_TOKEN_SECRET=${ACCESS_TOKEN_SECRET}
+      - ACCESS_TOKEN_EXPIRY=${ACCESS_TOKEN_EXPIRY}
     depends_on:
       - auth-service
       - stock-service
       - order-service
     networks:
       - flash-sale-net
-  
+
   auth-service:
     build: ./auth-service
     container_name: dfs-auth
@@ -76,6 +77,7 @@ services:
     environment:
       - PORT=3003
       - MONGO_URI=mongodb://mongodb:27017/order_db
+      - STOCK_SERVICE_URL=http://stock-service:3002/api/v1/stock
     depends_on:
       - mongodb
     networks:

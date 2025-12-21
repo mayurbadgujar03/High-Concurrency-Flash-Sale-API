@@ -57,9 +57,10 @@ const loginUser = AsyncHandler(async (req, res) => {
     secure: process.env.NODE_ENV === "production",
   };
 
+  res.cookie("accessToken", accessToken, options)
+
   return res
     .status(200)
-    .cookie("accessToken", accessToken, options)
     .json(
       new ApiResponse(
         200,
@@ -78,7 +79,7 @@ const validateToken = AsyncHandler(async (req, res) => {
   }
 
   try {
-    const decodedToken = jwt.verify(token, config.accessTokenSecret);
+    const decodedToken = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
     const user = await User.findById(decodedToken?._id).select("-password");
     if (!user) {
       return res

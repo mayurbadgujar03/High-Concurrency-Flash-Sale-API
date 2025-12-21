@@ -1,5 +1,6 @@
 import { ApiError } from "../utils/api-error.js";
 import { AsyncHandler } from "../utils/async-handler.js";
+import {config} from "../config/config.js";
 import fetch from "node-fetch";
 
 export const verifyJWT = AsyncHandler(async (req, res, next) => {
@@ -17,16 +18,16 @@ export const verifyJWT = AsyncHandler(async (req, res, next) => {
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({
-        token: token,
-      }),
+      body: JSON.stringify({token}),
     });
 
-    if (!response.data?.data?.isValid) {
+    const authData = await response.json();
+
+    if (!response.ok || !authData.data?.isValid) {
       throw new ApiError(401, "Invalid Access Token");
     }
 
-    req.user = response.data.data.user;
+    req.user = authData.data.user;
 
     next();
   } catch (error) {
