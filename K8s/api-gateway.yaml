@@ -1,40 +1,41 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: redis
+  name: api-gateway
   namespace: e-com-ns
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: redis
+      app: api-gateway
   template:
     metadata:
       labels:
-        app: redis
+        app: api-gateway
     spec:
       containers:
-        - name: redis
-          image: redis:alpine
+        - name: api-gateway
+          image: mayurbadgujar03/api-gateway:v1
           ports:
-            - containerPort: 6379
+            - containerPort: 3000
+          envFrom:
+            - secretRef:
+                name: e-com-secrets
           resources:
             requests:
-              cpu: 50m
-              memory: 64Mi
-            limits:
-              cpu: 250m
+              cpu: 100m
               memory: 128Mi
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: redis
+  name: api-gateway
   namespace: e-com-ns
 spec:
   selector:
-    app: redis
+    app: api-gateway
+  type: ClusterIP
   ports:
     - protocol: TCP
-      port: 6379
-      targetPort: 6379
+      port: 3000
+      targetPort: 3000
